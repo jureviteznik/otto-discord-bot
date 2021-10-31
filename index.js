@@ -147,7 +147,7 @@ async function history(user){
 			},
 			{ $project: {
 				playerOneId: true,
-    			playerTwoId: true,
+				playerTwoId: true,
 				winsPlayerOne: true,
 				winsPlayerTwo: true,
 				date: true,
