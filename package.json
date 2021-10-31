@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "run"
+    "test": "run",
+    "start": "node index.js"
   },
   "author": "Jure Viteznik",
   "license": "ISC",
   "engines": {
-    "node": "16.x"
+    "node": "16.6.1"
   },
   "dependencies": {
     "@discordjs/builders": "^0.6.0",
