@@ -9,7 +9,7 @@
   "author": "Jure Viteznik",
   "license": "ISC",
   "engines": {
-    "node": "16.6.1"
+    "node": "16.10.0"
   },
   "dependencies": {
     "@discordjs/builders": "^0.6.0",
@@ -18,7 +18,7 @@
     "discord.js": "^13.1.0",
     "dotenv": "^10.0.0",
     "mongoose": "^6.0.9",
-    "node": "16.6.1",
+    "node": "16.10.0",
     "text-table": "^0.2.0"
   },
   "description": ""
