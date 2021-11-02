@@ -31,6 +31,8 @@ const commands = [
                             .setDescription('Updates players stats!')
                             .addUserOption(option => option.setName('player').setDescription('Select player. If this is skiped the person posting is selected as player.')),
 
+    new SlashCommandBuilder().setName('help')
+                            .setDescription('Description of the bot and its commands!'),
 
 ]
 	.map(command => command.toJSON());

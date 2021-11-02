@@ -59,6 +59,11 @@ async function connectDiscord(){
 				const player = options.getUser('player') || user
 				const response = await updatePlayerStats(player)
 			await interaction.editReply(response)
+
+		} else if (commandName === 'help') {
+			await interaction.deferReply()
+				const response = await help()
+			await interaction.editReply(response)
 		}
 
 
@@ -71,6 +76,21 @@ async function connectDiscord(){
 ///////////////
 // FUNCTIONS //
 ///////////////
+
+async function help(){
+	return	'```' +
+			'Hello! I\'m Otto, APD league stats bot!\n'+
+			'I keep track of matches and standings, so you can know who qualifys for the final pod each month.\n'+
+
+			'Here are my comands:\n'+
+			'\t/addmatch - adds a match record into the database\n'+			
+			'\t/standings - displays current top 15 players\n'+
+			'\t/stats - displays players stats like match wins/losses, match win%, game win%...\n'+
+			'\t/history - displays players last 9 matches\n'+
+			'\t/updateplayer - double checks players stats and updates them if necessary\n'+
+			'\t/help - displays this message'+
+			'```'
+}
 
 async function standings(){
 	const players = await playerModel.find().sort({matchWins: -1, matchWinPercentage: -1, gameWinPercentage: -1, opponentMatchWinPercentage: -1, opponentGameWinPercentage: -1} ).limit(15)
