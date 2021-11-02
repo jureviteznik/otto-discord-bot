@@ -78,9 +78,15 @@ async function connectDiscord(){
 ///////////////
 
 async function help(){
-	return	'```' +
+	return  { embeds: [
+				MessageEmbed()
+				.setColor('#0099ff')
+				.setTitle('Some title')
+			]}
+	/*
+			'```' +
 			'Hello! I\'m Otto, APD league stats bot!\n'+
-			'I keep track of matches and standings, so you can know who qualifys for the final pod each month.\n'+
+			'I keep track of matches and standings, so you can know who qualifys for the final pod each month.\n\n'+
 
 			'Here are my comands:\n'+
 			'\t/addmatch - adds a match record into the database\n'+			
@@ -90,6 +96,8 @@ async function help(){
 			'\t/updateplayer - double checks players stats and updates them if necessary\n'+
 			'\t/help - displays this message'+
 			'```'
+	*/
+
 }
 
 async function standings(){
