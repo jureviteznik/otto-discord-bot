@@ -61,9 +61,8 @@ async function connectDiscord(){
 			await interaction.editReply(response)
 
 		} else if (commandName === 'help') {
-			await interaction.deferReply()
-				const response = await help()
-			await interaction.editReply(response)
+			const response = await help()
+			await interaction.reply({ embeds: [response]})
 		}
 
 
@@ -78,11 +77,10 @@ async function connectDiscord(){
 ///////////////
 
 async function help(){
-	return  { embeds: [
-				MessageEmbed()
+	return  new MessageEmbed()
 				.setColor('#0099ff')
 				.setTitle('Some title')
-			]}
+
 	/*
 			'```' +
 			'Hello! I\'m Otto, APD league stats bot!\n'+
