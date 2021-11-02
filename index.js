@@ -88,8 +88,8 @@ async function help(){
 			'/addmatch - Adds a match record into the database.\n'+
 				'\t[opponent] - Person from the server that you played against. This field is required!\n'+
 				'\t[player] - If this field is skiped the person posting is selected as player.\n'+
-				'\t[wins] - Number of games that player won.\n'+
-				'\t[losses] - Number of games that opponent won.\n\n'+
+				'\t[wins] - Number of games that player won. If skiped value is set to 0.\n'+
+				'\t[losses] - Number of games that opponent won. If skiped value is set to 0.\n\n'+
 
 			'/standings - displays current top 15 players\n\n'+
 				
