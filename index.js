@@ -61,8 +61,9 @@ async function connectDiscord(){
 			await interaction.editReply(response)
 
 		} else if (commandName === 'help') {
-			const response = await help()
-			await interaction.reply({ embeds: [response]})
+			await interaction.deferReply()
+				const response = await help()
+			await interaction.editReply(response)
 		}
 
 
@@ -77,48 +78,32 @@ async function connectDiscord(){
 ///////////////
 
 async function help(){
-	return  new MessageEmbed()
-	.setColor(0x3498DB)
-	.setAuthor("Author Name, it can hold 256 characters", "https://i.imgur.com/lm8s41J.png")
-	.setTitle("This is your title, it can hold 256 characters")
-	.setURL("https://discord.js.org/#/docs/main/stable/class/MessageEmbed")
-	.setDescription("This is the main body of text, it can hold 4096 characters.")
-	.setImage("http://i.imgur.com/yVpymuV.png")
-	.setThumbnail("http://i.imgur.com/p2qNFag.png")
-	.addField("This is a single field title, it can hold 256 characters", "This is a field value, it can hold 1024 characters.")
-	/*
-	 * Inline fields may not display as inline if the thumbnail and/or image is too big.
-	 */
-	.addFields(
-	  { name: "Inline fields", value: "They can have different fields with small headlines, and you can inline them.", inline: true },
-	  { name: "Masked links", value: "You can put [masked links](https://discord.js.org/#/docs/main/master/class/MessageEmbed) inside of rich embeds.", inline: true },
-	  { name: "Markdown", value: "You can put all the *usual* **__Markdown__** inside of them.", inline: true }
-	)
-	/*
-	 * Blank field, useful to create some space.
-	 */
-	.addField("\u200b", "\u200b")
-	/*
-	 * Takes a Date object, defaults to current date.
-	 */
-	.setTimestamp()
-	.setFooter("This is the footer text, it can hold 2048 characters", "http://i.imgur.com/w1vhFSR.png")
 
-	/*
-			'```' +
+	return 	'```' +
 			'Hello! I\'m Otto, APD league stats bot!\n'+
 			'I keep track of matches and standings, so you can know who qualifys for the final pod each month.\n\n'+
 
-			'Here are my comands:\n'+
-			'\t/addmatch - adds a match record into the database\n'+			
-			'\t/standings - displays current top 15 players\n'+
-			'\t/stats - displays players stats like match wins/losses, match win%, game win%...\n'+
-			'\t/history - displays players last 9 matches\n'+
-			'\t/updateplayer - double checks players stats and updates them if necessary\n'+
-			'\t/help - displays this message'+
-			'```'
-	*/
+			'Here are my comands:\n\n'+
 
+			'/addmatch - Adds a match record into the database.\n'+
+				'\t[opponent] - Person from the server that you played against. This field is required!\n'+
+				'\t[player] - If this field is skiped the person posting is selected as player.\n'+
+				'\t[wins] - Number of games that player won.\n'+
+				'\t[losses] - Number of games that opponent won.\n\n'+
+
+			'/standings - displays current top 15 players\n\n'+
+				
+			'/stats - displays players stats like match wins/losses, match win%, game win%...\n'+
+				'\t[player] - If this field is skiped the person posting is selected as player.\n\n'+
+
+			'/history - displays players last 9 matches\n'+
+				'\t[player] - If this field is skiped the person posting is selected as player.\n\n'+
+
+			'/updateplayer - double checks players stats and updates them if necessary\n'+
+				'\t[player] - If this field is skiped the person posting is selected as player.\n\n'+
+
+			'/help - displays this message'+
+			'```'
 }
 
 async function standings(){
