@@ -7,9 +7,6 @@ const DATABASE_CONNECTION_STRING = process.env.DATABASE_CONNECTION_STRING
 
 
 async function main() {
-
-	console.log(DISCORD_TOKEN)
-	console.log(DATABASE_CONNECTION_STRING)
 	connectDiscord()
 	connectDatabase()
 }
