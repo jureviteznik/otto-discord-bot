@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+#config file
+config.json
+
+>>>>>>> 4c4454966b3d4b29818518ddc326764dea5fb467
 # Logs
 logs
 *.log
