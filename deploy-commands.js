@@ -1,7 +1,10 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
-const { clientId, guildId, token } = require('./config.json');
+
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN
+const GUILD_ID = 718565248986120207
+const CLIENT_ID = 894675571546673265
 
 const commands = [
 	new SlashCommandBuilder().setName('ping')
@@ -11,6 +14,10 @@ const commands = [
                             .setDescription('Displays 9 of your recent matches!')
                             .addUserOption(option => option.setName('player').setDescription('Select player. If this is skiped the person posting is selected as player.')),
                             
+    
+    new SlashCommandBuilder().setName('addbracket')
+                            .setDescription('Adds match records of all matches played in the bracket!')
+                            .addStringOption(option => option.setName('sessionid').setDescription('Session ID of the mtgdraft website.').setRequired(true)),
 
 	new SlashCommandBuilder().setName('addmatch')
                             .setDescription('Add a new match record!')
@@ -37,8 +44,8 @@ const commands = [
 ]
 	.map(command => command.toJSON());
 
-const rest = new REST({ version: '9' }).setToken(token);
+const rest = new REST({ version: '9' }).setToken(DISCORD_TOKEN);
 
-rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands })
+rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands })
 	.then(() => console.log('Successfully registered application commands.'))
 	.catch(console.error);

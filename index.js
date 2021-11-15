@@ -1,9 +1,15 @@
 const { Client, Intents } = require('discord.js')
 const mongoose = require('mongoose')
-const table = require('text-table');
-const { token, databaseConnectionString } = require('./config.json')
+const table = require('text-table')
+
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN
+const DATABASE_CONNECTION_STRING = process.env.DATABASE_CONNECTION_STRING
+
 
 async function main() {
+
+	console.log(DISCORD_TOKEN)
+	console.log(DATABASE_CONNECTION_STRING)
 	connectDiscord()
 	connectDatabase()
 }
@@ -60,7 +66,13 @@ async function connectDiscord(){
 				const response = await updatePlayerStats(player)
 			await interaction.editReply(response)
 
-		} else if (commandName === 'help') {
+		} else if (commandName === 'addbracket') {
+			await interaction.deferReply()
+				const sessionid = options.getString('sessionid') || null
+				const response = await addbracket(sessionid)
+			await interaction.editReply(response)
+		
+		}else if (commandName === 'help') {
 			await interaction.deferReply()
 				const response = await help()
 			await interaction.editReply(response)
@@ -70,7 +82,7 @@ async function connectDiscord(){
 		
 	})
 
-	client.login(token)
+	client.login(DISCORD_TOKEN)
 }
 
 ///////////////
@@ -104,6 +116,12 @@ async function help(){
 
 			'/help - displays this message'+
 			'```'
+}
+
+async function addbracket(sessionid){
+	if(sessionid == null)	return 'Empty session id!'
+
+
 }
 
 async function standings(){
@@ -366,7 +384,7 @@ async function checkIfPlayerExists(user){
 //////////////
 
 async function connectDatabase(){
-	await mongoose.connect(databaseConnectionString,  {useNewUrlParser: true, useUnifiedTopology: true});
+	await mongoose.connect(DATABASE_CONNECTION_STRING,  {useNewUrlParser: true, useUnifiedTopology: true});
     const db = mongoose.connection 
     db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 }
