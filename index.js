@@ -11,7 +11,7 @@ async function main() {
 	connectDatabase()
 }
 
- 
+
 /////////////
 // DISCORD //
 /////////////
