@@ -3,8 +3,8 @@ const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN
-const GUILD_ID = 718565248986120207
-const CLIENT_ID = 894675571546673265
+const GUILD_ID = process.env.GUILD_ID
+const CLIENT_ID = process.env.CLIENT_ID
 
 const commands = [
 	new SlashCommandBuilder().setName('ping')
@@ -13,8 +13,8 @@ const commands = [
 	new SlashCommandBuilder().setName('history')
                             .setDescription('Displays 9 of your recent matches!')
                             .addUserOption(option => option.setName('player').setDescription('Select player. If this is skiped the person posting is selected as player.')),
-                            
-    
+
+
     new SlashCommandBuilder().setName('addbracket')
                             .setDescription('Adds match records of all matches played in the bracket!')
                             .addStringOption(option => option.setName('sessionid').setDescription('Session ID of the mtgdraft website.').setRequired(true)),
@@ -24,7 +24,8 @@ const commands = [
                             .addUserOption(option => option.setName('opponent').setDescription('Select your opponent').setRequired(true))
                             .addUserOption(option => option.setName('player').setDescription('Select player. If this is skiped the person posting is selected as player.'))
                             .addIntegerOption(option => option.setName('wins').setDescription('# of wins'))
-                            .addIntegerOption(option => option.setName('losses').setDescription('# of losses')),
+                            .addIntegerOption(option => option.setName('losses').setDescription('# of losses'))
+                            .addBooleanOption(option => option.setName('force').setDescription('Force the bot to add the match record when it\'s complaining about duplicates')),
 
     new SlashCommandBuilder().setName('stats')
                             .setDescription('Displays your wins-losses and match points from this mounth!')
