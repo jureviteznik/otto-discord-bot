@@ -11,7 +11,7 @@ async function main() {
 	connectDatabase()
 }
 
- 
+
 /////////////
 // DISCORD //
 /////////////
@@ -25,9 +25,9 @@ async function connectDiscord(){
 
 	client.on('interactionCreate', async interaction => {
 		if (!interaction.isCommand()) return
-	
+
 		const { commandName, user, options } = interaction
-	
+
 		if (commandName === 'ping') {
 			await interaction.reply('Pong!')
 
@@ -43,7 +43,8 @@ async function connectDiscord(){
 				const player = options.getUser('player') || user
 				const wins = options.getInteger('wins')		|| 0
 				const losses = options.getInteger('losses')	|| 0
-				const response = await addMatch(player, opponent, wins, losses)
+                const force = options.getBoolean('force') || false
+				const response = await addMatch(player, opponent, wins, losses, force)
 			await interaction.editReply(response)
 
 		} else if (commandName === 'stats') {
@@ -68,7 +69,7 @@ async function connectDiscord(){
 				const sessionid = options.getString('sessionid') || null
 				const response = await addbracket(sessionid)
 			await interaction.editReply(response)
-		
+
 		}else if (commandName === 'help') {
 			await interaction.deferReply()
 				const response = await help()
@@ -76,7 +77,7 @@ async function connectDiscord(){
 		}
 
 
-		
+
 	})
 
 	client.login(DISCORD_TOKEN)
@@ -101,7 +102,7 @@ async function help(){
 				'\t[losses] - Number of games that opponent won. If skiped value is set to 0.\n\n'+
 
 			'/standings - displays current top 15 players\n\n'+
-				
+
 			'/stats - displays players stats like match wins/losses, match win%, game win%...\n'+
 				'\t[player] - If this field is skiped the person posting is selected as player.\n\n'+
 
@@ -123,7 +124,7 @@ async function addbracket(sessionid){
 
 async function standings(){
 	const players = await playerModel.find().sort({matchWins: -1, matchWinPercentage: -1, gameWinPercentage: -1, opponentMatchWinPercentage: -1, opponentGameWinPercentage: -1} ).limit(15)
-	
+
 	let rows = [['Rank', 'Player', 'Match wins', 'Match win%', 'Game win%', 'Opp match win%', 'Opp game win%']]
 
 	let rank = 1
@@ -135,7 +136,7 @@ async function standings(){
 
 async function stats(user){
 	await checkIfPlayerExists(user)
-	
+
 	try{
 		const player = await playerModel.findOne({playerId: user.id})
 
@@ -160,22 +161,22 @@ async function history(user){
 		let matches = await matchModel.aggregate([
 			{
 				$match: {
-					 $or : [{playerOneId: user.id}, {playerTwoId: user.id }] 
+					 $or : [{playerOneId: user.id}, {playerTwoId: user.id }]
 				}
 			},
 			{
 				$sort: { date: -1 }
 			},
-			{ 
+			{
 				$limit: 9
 			},
 			{
 				$lookup: {
 				  from: 'playermodels',
 				  let: { playerOneId: '$playerOneId', playerTwoId: '$playerTwoId' },
-				  pipeline: [{ 
-					  $match: { 
-						  $expr: { 
+				  pipeline: [{
+					  $match: {
+						  $expr: {
 							  $and: [
 								{ $ne: [ '$playerId', user.id ] },
 								{ $or : [
@@ -203,7 +204,7 @@ async function history(user){
 				opponent: '$opponent.playerName'
 			}}
 		])
-		
+
 
 		let rows = [['Opponent', 'wins', 'losses']]
 
@@ -226,16 +227,16 @@ async function updatePlayerStats(user){
 	let matches = await matchModel.aggregate([
 		{
 			$match: {
-				 $or : [{playerOneId: user.id}, {playerTwoId: user.id }] 
+				 $or : [{playerOneId: user.id}, {playerTwoId: user.id }]
 			}
 		},
 		{
 			$lookup: {
 			  from: 'playermodels',
 			  let: { playerOneId: '$playerOneId', playerTwoId: '$playerTwoId' },
-			  pipeline: [{ 
-				  $match: { 
-					  $expr: { 
+			  pipeline: [{
+				  $match: {
+					  $expr: {
 						  $and: [
 							{ $ne: [ '$playerId', user.id ] },
 							{ $or : [
@@ -318,9 +319,16 @@ async function updatePlayerStats(user){
 	return 'Player stats updated!'
 }
 
-async function addMatch(user1, user2, wins, losses){
+async function addMatch(user1, user2, wins, losses, force){
 	await checkIfPlayerExists(user1)
 	await checkIfPlayerExists(user2)
+
+    if(user1.id > user2.id){
+        [user1, user2] = [user2, user1];
+        [wins, losses] = [losses, wins];
+    }
+
+
 	try{
 
 		const newMatch = new matchModel({
@@ -331,19 +339,37 @@ async function addMatch(user1, user2, wins, losses){
 			date: Date()
 		})
 
-		await newMatch.save(async (err) => {
-			await updatePlayerStats(user1)
-			await updatePlayerStats(user2)
-			if (err) return handleError(err)
-		})
+        let matchAlreadyExists = await checkIfMatchAlreadyExists(newMatch)
 
-		let rows = [[user1.username, user2.username], [wins, losses]]
-		let options = { align: [ 'c', 'c' ] }
+        if(force || !matchAlreadyExists){
+            await newMatch.save(async (err) => {
+                await updatePlayerStats(user1)
+                await updatePlayerStats(user2)
+                if (err) return handleError(err)
+            })
 
-		return '```' + table(rows, options) + '```'
+            let rows = [[user1.username, user2.username], [wins, losses]]
+            let options = { align: [ 'c', 'c' ] }
+
+            return '```' + table(rows, options) + '```'
+        } else {
+            return 'Similar match record already exists, use `force` if you are sure this is a new record'
+        }
 	}catch(err){
 		console.error(err)
 	}
+}
+
+async function checkIfMatchAlreadyExists(match){
+    const GRACE_PERIOD_HOURS = 2
+    let cutoffTime = new Date(match.date.getTime())
+    cutoffTime.setHours(match.date.getHours() - GRACE_PERIOD_HOURS)
+
+    return await matchModel.exists({
+        playerOneId: match.playerOneId,
+        playerTwoId: match.playerTwoId,
+        date: { $gte: cutoffTime.toISOString()}
+    })
 }
 
 async function checkIfPlayerExists(user){
@@ -375,14 +401,13 @@ async function checkIfPlayerExists(user){
 	}
 }
 
-
 //////////////
 // DATABASE //
 //////////////
 
 async function connectDatabase(){
 	await mongoose.connect(DATABASE_CONNECTION_STRING,  {useNewUrlParser: true, useUnifiedTopology: true});
-    const db = mongoose.connection 
+    const db = mongoose.connection
     db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 }
 
@@ -420,5 +445,3 @@ const matchModel = mongoose.model('matchModel', matchSchema)
 // RUN MAIN //
 //////////////
 main()
-
-
