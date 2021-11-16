@@ -7,10 +7,10 @@ const GUILD_ID = process.env.GUILD_ID
 const CLIENT_ID = process.env.CLIENT_ID
 
 const commands = [
-	new SlashCommandBuilder().setName('ping')
+    new SlashCommandBuilder().setName('ping')
                             .setDescription('Replies with pong!'),
 
-	new SlashCommandBuilder().setName('history')
+    new SlashCommandBuilder().setName('history')
                             .setDescription('Displays 9 of your recent matches!')
                             .addUserOption(option => option.setName('player').setDescription('Select player. If this is skiped the person posting is selected as player.')),
 
@@ -19,7 +19,7 @@ const commands = [
                             .setDescription('Adds match records of all matches played in the bracket!')
                             .addStringOption(option => option.setName('sessionid').setDescription('Session ID of the mtgdraft website.').setRequired(true)),
 
-	new SlashCommandBuilder().setName('addmatch')
+    new SlashCommandBuilder().setName('addmatch')
                             .setDescription('Add a new match record!')
                             .addUserOption(option => option.setName('opponent').setDescription('Select your opponent').setRequired(true))
                             .addUserOption(option => option.setName('player').setDescription('Select player. If this is skiped the person posting is selected as player.'))
@@ -43,10 +43,10 @@ const commands = [
                             .setDescription('Description of the bot and its commands!'),
 
 ]
-	.map(command => command.toJSON());
+    .map(command => command.toJSON());
 
 const rest = new REST({ version: '9' }).setToken(DISCORD_TOKEN);
 
 rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands })
-	.then(() => console.log('Successfully registered application commands.'))
-	.catch(console.error);
+    .then(() => console.log('Successfully registered application commands.'))
+    .catch(console.error);

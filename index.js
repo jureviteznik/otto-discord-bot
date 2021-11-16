@@ -1,6 +1,7 @@
 const { Client, Intents } = require('discord.js')
 const mongoose = require('mongoose')
 const table = require('text-table')
+const fetch = require('isomorphic-fetch')
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN
 const DATABASE_CONNECTION_STRING = process.env.DATABASE_CONNECTION_STRING
@@ -119,7 +120,17 @@ async function help(){
 async function addbracket(sessionid){
 	if(sessionid == null)	return 'Empty session id!'
 
+	console.log('ma kej')
 
+	let bracketUrl = 'https://www.mtgadraft.tk/getBracket/' + sessionid
+
+	const bracketResponse = await fatch(bracketUrl)
+
+	const { players, results } = bracketResponse
+
+	console.log(players)
+
+	return 'jaa'
 }
 
 async function standings(){
