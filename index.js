@@ -120,17 +120,169 @@ async function help(){
 async function addbracket(sessionid){
 	if(sessionid == null)	return 'Empty session id!'
 
-	console.log('ma kej')
-
 	let bracketUrl = 'https://www.mtgadraft.tk/getBracket/' + sessionid
 
-	const bracketResponse = await fatch(bracketUrl)
+	const bracketResponse = await fetch(bracketUrl)
 
-	const { players, results } = bracketResponse
+	if(bracketResponse.status == 404){
+		return 'Brackets for the session do not exist!'
+	}
 
-	console.log(players)
+	const { players, results, swiss } = await bracketResponse.json()
+	
+	if(!swiss){
+		return 'Tournament mode should be swiss!'
+	}
 
-	return 'jaa'
+	let winnerGame1, winnerGame2, winnerGame3, winnerGame4
+	let looserGame1, looserGame2, looserGame3, looserGame4
+
+	let winnerGame5, winnerGame6, winnerGame7, winnerGame8
+	let looserGame5, looserGame6, looserGame7, looserGame8
+
+	let winnerGame9, winnerGame10, winnerGame11, winnerGame12
+	let looserGame9, looserGame10, looserGame11, looserGame12
+
+	let rows = [['Player1', 'wins p1', 'wins p2', 'player2']]
+	let options = { align: [ 'c', 'c', 'c', 'c' ] }
+
+	//I have no idea why results have strings and not integers.... the funny thing is 0s are integers, but 1s and 2s are strings
+	if(results[0][0] == '2'){
+		winnerGame1 = players[0]
+		looserGame1 = players[1]
+	}else if(results[0][1] == '2'){
+		winnerGame1 = players[1]
+		looserGame1 = players[0]
+	}else{
+		return 'No player has 2 wins in game 1!'
+	}
+	rows.push([players[0].userName, results[0][0], results[0][1], players[1].userName])
+
+	if(results[1][0] == '2'){
+		winnerGame2 = players[2]
+		looserGame2 = players[3]
+	}else if(results[1][1] == '2'){
+		winnerGame2 = players[3]
+		looserGame2 = players[2]
+	}else{
+		return 'No player has 2 wins in game 2!'
+	}
+	rows.push([players[2].userName, results[1][0], results[1][1], players[3].userName])
+
+	if(results[2][0] == '2'){
+		winnerGame3 = players[4]
+		looserGame3 = players[5]
+	}else if(results[2][1] == '2'){
+		winnerGame3 = players[5]
+		looserGame3 = players[4]
+	}else{
+		return 'No player has 2 wins in game 3!'
+	}
+
+	rows.push([players[4].userName, results[2][0], results[2][1], players[5].userName])
+
+	if(results[3][0] == '2'){
+		winnerGame4 = players[6]
+		looserGame4 = players[7]
+	}else if(results[3][1] == '2'){
+		winnerGame4 = players[7]
+		looserGame4 = players[6]
+	}else{
+		return 'No player has 2 wins in game 4!'
+	}
+	rows.push([players[6].userName, results[3][0], results[3][1], players[7].userName])
+
+	if(results[4][0] == '2'){
+		winnerGame5 = winnerGame1
+		looserGame5 = winnerGame2
+	}else if(results[4][1] == '2'){
+		winnerGame5 = winnerGame2
+		looserGame5 = winnerGame1
+	}else{
+		return 'No player has 2 wins in game 5!'
+	}
+	rows.push([winnerGame1.userName, results[4][0], results[4][1], winnerGame2.userName])
+
+	if(results[5][0] == '2'){
+		winnerGame6 = winnerGame3
+		looserGame6 = winnerGame4
+	}else if(results[5][1] == '2'){
+		winnerGame6 = winnerGame4
+		looserGame6 = winnerGame3
+	}else{
+		return 'No player has 2 wins in game 6!'
+	}
+	rows.push([winnerGame3.userName, results[5][0], results[5][1], winnerGame4.userName])
+
+	if(results[6][0] == '2'){
+		winnerGame7 = looserGame3
+		looserGame7 = looserGame4
+	}else if(results[6][1] == '2'){
+		winnerGame7 = looserGame4
+		looserGame7 = looserGame3
+	}else{
+		return 'No player has 2 wins in game 7!'
+	}
+	rows.push([looserGame3.userName, results[6][0], results[6][1], looserGame4.userName])
+	
+	if(results[7][0] == '2'){
+		winnerGame8 = looserGame1
+		looserGame8 = looserGame2
+	}else if(results[7][1] == '2'){
+		winnerGame8 = looserGame2
+		looserGame8 = looserGame1
+	}else{
+		return 'No player has 2 wins in game 8!'
+	}
+	rows.push([looserGame1.userName, results[7][0], results[7][1], looserGame2.userName])
+
+	if(results[8][0] == '2'){
+		winnerGame9 = winnerGame5
+		looserGame9 = winnerGame6
+	}else if(results[8][1] == '2'){
+		winnerGame9 = winnerGame6
+		looserGame9 = winnerGame5
+	}else{
+		return 'No player has 2 wins in game 9!'
+	}
+	rows.push([winnerGame5.userName, results[8][0], results[8][1], winnerGame6.userName])
+
+	if(results[9][0] == '2'){
+		winnerGame10 = looserGame5
+		looserGame10 = winnerGame7
+	}else if(results[9][1] == '2'){
+		winnerGame10 = winnerGame7
+		looserGame10 = looserGame5
+	}else{
+		return 'No player has 2 wins in game 10!'
+	}
+	rows.push([looserGame5.userName, results[9][0], results[9][1], winnerGame7.userName])
+
+	if(results[10][0] == '2'){
+		winnerGame11 = looserGame6
+		looserGame11 = winnerGame8
+	}else if(results[10][1] == '2'){
+		winnerGame11 = winnerGame8
+		looserGame11 = looserGame6
+	}else{
+		return 'No player has 2 wins in game 11!'
+	}
+	rows.push([looserGame6.userName, results[10][0], results[10][1], winnerGame8.userName])
+
+	if(results[11][0] == '2'){
+		winnerGame12 = looserGame7
+		looserGame12 = looserGame8
+	}else if(results[11][1] == '2'){
+		winnerGame12 = looserGame8
+		looserGame12 = looserGame7
+	}else{
+		return 'No player has 2 wins in game 12!'
+	}
+	rows.push([looserGame7.userName, results[11][0], results[11][1], looserGame8.userName])
+
+	//TODO: enter games into the database
+	
+	return '```' + table(rows, options) + '```'
 }
 
 async function standings(){
