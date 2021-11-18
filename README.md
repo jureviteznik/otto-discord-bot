@@ -12,11 +12,11 @@ sessionid (required) - Session id of the pod from the mtgadraft.tk website.
 ## addmatch [opponent] [player] [wins] [losses] [force]
 Adds a match record into the database.
 
-opponent (required) - Person from the discord server that you played against.
-player - If this field is skiped the person posting is selected as player.
-wins - Number of games that player won. If skiped value is set to 0.
-losses - Number of games that opponent won. If skiped value is set to 0.
-force - Force the bot to add the match record when it's complaining about duplicates.
+opponent (required) - Person from the discord server that you played against.  
+player - If this field is skiped the person posting is selected as player.  
+wins - Number of games that player won. If skiped value is set to 0.  
+losses - Number of games that opponent won. If skiped value is set to 0.  
+force - Force the bot to add the match record when it's complaining about duplicates.  
 
 ## standings
 displays current top 15 players
