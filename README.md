@@ -4,12 +4,12 @@ Otto is a discord bot used in the Arena Pod Draft discord server for keeping tra
 
 # Commands
 
-## addbracket <sessionid>
+## addbracket [sessionid]
 Adds a all matches from a finished pod bracket.
 
 sessionid (required) - Session id of the pod from the mtgadraft.tk website.
 
-## addmatch <opponent> <player> <wins> <losses> <force>
+## addmatch [opponent] [player] [wins] [losses] [force]
 Adds a match record into the database.
 
 opponent (required) - Person from the discord server that you played against.
@@ -21,17 +21,17 @@ force - Force the bot to add the match record when it's complaining about duplic
 ## standings
 displays current top 15 players
 
-## stats <player>
+## stats [player]
 displays players stats like match wins/losses, match win%, game win%...
 
 player - If this field is skiped the person posting is selected as player.
 
-## history <player>
+## history [player]
 displays players last 9 matches
 
 player - If this field is skiped the person posting is selected as player.
 
-## updateplayer <player> 
+## updateplayer [player] 
 double checks players stats and updates them if necessary
 
 player - If this field is skiped the person posting is selected as player.
