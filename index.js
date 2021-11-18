@@ -2,9 +2,11 @@ const { Client, Intents } = require('discord.js')
 const mongoose = require('mongoose')
 const table = require('text-table')
 const fetch = require('isomorphic-fetch')
+require('dotenv').config()
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN
 const DATABASE_CONNECTION_STRING = process.env.DATABASE_CONNECTION_STRING
+const GUILD_ID = process.env.GUILD_ID
 
 
 async function main() {
@@ -68,7 +70,7 @@ async function connectDiscord(){
 		} else if (commandName === 'addbracket') {
 			await interaction.deferReply()
 				const sessionid = options.getString('sessionid') || null
-				const response = await addbracket(sessionid)
+				const response = await addbracket(sessionid, client.guilds.cache.get(GUILD_ID))
 			await interaction.editReply(response)
 
 		}else if (commandName === 'help') {
@@ -117,7 +119,7 @@ async function help(){
 			'```'
 }
 
-async function addbracket(sessionid){
+async function addbracket(sessionid, guild){
 	if(sessionid == null)	return 'Empty session id!'
 
 	let bracketUrl = 'https://www.mtgadraft.tk/getBracket/' + sessionid
@@ -128,161 +130,89 @@ async function addbracket(sessionid){
 		return 'Brackets for the session do not exist!'
 	}
 
-	const { players, results, swiss } = await bracketResponse.json()
-	
+	const { bracketPlayers, bracketResults, swiss } = await bracketResponse.json()
+
 	if(!swiss){
 		return 'Tournament mode should be swiss!'
 	}
 
-	let winnerGame1, winnerGame2, winnerGame3, winnerGame4
-	let looserGame1, looserGame2, looserGame3, looserGame4
+    let players = []
+    for (let bracketPlayer of bracketPlayers){
+        let player = await guild.members.cache.find(member => member.displayName == bracketPlayer)
+        if(player === undefined){
+            return 'Player ' + bracketPlayer + ' not found'
+        }
+        players.push(player.user)
+    }
+    const results = bracketResults.map(([a, b]) => [parseInt(a, 10), parseInt(b, 10)])
 
-	let winnerGame5, winnerGame6, winnerGame7, winnerGame8
-	let looserGame5, looserGame6, looserGame7, looserGame8
-
-	let winnerGame9, winnerGame10, winnerGame11, winnerGame12
-	let looserGame9, looserGame10, looserGame11, looserGame12
+    let parsedResults = parseResults(players, results)
 
 	let rows = [['Player1', 'wins p1', 'wins p2', 'player2']]
 	let options = { align: [ 'c', 'c', 'c', 'c' ] }
 
-	//I have no idea why results have strings and not integers.... the funny thing is 0s are integers, but 1s and 2s are strings
-	if(results[0][0] == '2'){
-		winnerGame1 = players[0]
-		looserGame1 = players[1]
-	}else if(results[0][1] == '2'){
-		winnerGame1 = players[1]
-		looserGame1 = players[0]
-	}else{
-		return 'No player has 2 wins in game 1!'
-	}
-	rows.push([players[0].userName, results[0][0], results[0][1], players[1].userName])
+	for(let result of parsedResults){
+        [player1, player2, winsPlayer1, winsPlayer2] = result;
+        rows.push([player1.username, winsPlayer1, winsPlayer2, player2.username])
+        addMatch(player1, player2, winsPlayer1, winsPlayer2, false)
+    }
 
-	if(results[1][0] == '2'){
-		winnerGame2 = players[2]
-		looserGame2 = players[3]
-	}else if(results[1][1] == '2'){
-		winnerGame2 = players[3]
-		looserGame2 = players[2]
-	}else{
-		return 'No player has 2 wins in game 2!'
-	}
-	rows.push([players[2].userName, results[1][0], results[1][1], players[3].userName])
-
-	if(results[2][0] == '2'){
-		winnerGame3 = players[4]
-		looserGame3 = players[5]
-	}else if(results[2][1] == '2'){
-		winnerGame3 = players[5]
-		looserGame3 = players[4]
-	}else{
-		return 'No player has 2 wins in game 3!'
-	}
-
-	rows.push([players[4].userName, results[2][0], results[2][1], players[5].userName])
-
-	if(results[3][0] == '2'){
-		winnerGame4 = players[6]
-		looserGame4 = players[7]
-	}else if(results[3][1] == '2'){
-		winnerGame4 = players[7]
-		looserGame4 = players[6]
-	}else{
-		return 'No player has 2 wins in game 4!'
-	}
-	rows.push([players[6].userName, results[3][0], results[3][1], players[7].userName])
-
-	if(results[4][0] == '2'){
-		winnerGame5 = winnerGame1
-		looserGame5 = winnerGame2
-	}else if(results[4][1] == '2'){
-		winnerGame5 = winnerGame2
-		looserGame5 = winnerGame1
-	}else{
-		return 'No player has 2 wins in game 5!'
-	}
-	rows.push([winnerGame1.userName, results[4][0], results[4][1], winnerGame2.userName])
-
-	if(results[5][0] == '2'){
-		winnerGame6 = winnerGame3
-		looserGame6 = winnerGame4
-	}else if(results[5][1] == '2'){
-		winnerGame6 = winnerGame4
-		looserGame6 = winnerGame3
-	}else{
-		return 'No player has 2 wins in game 6!'
-	}
-	rows.push([winnerGame3.userName, results[5][0], results[5][1], winnerGame4.userName])
-
-	if(results[6][0] == '2'){
-		winnerGame7 = looserGame3
-		looserGame7 = looserGame4
-	}else if(results[6][1] == '2'){
-		winnerGame7 = looserGame4
-		looserGame7 = looserGame3
-	}else{
-		return 'No player has 2 wins in game 7!'
-	}
-	rows.push([looserGame3.userName, results[6][0], results[6][1], looserGame4.userName])
-	
-	if(results[7][0] == '2'){
-		winnerGame8 = looserGame1
-		looserGame8 = looserGame2
-	}else if(results[7][1] == '2'){
-		winnerGame8 = looserGame2
-		looserGame8 = looserGame1
-	}else{
-		return 'No player has 2 wins in game 8!'
-	}
-	rows.push([looserGame1.userName, results[7][0], results[7][1], looserGame2.userName])
-
-	if(results[8][0] == '2'){
-		winnerGame9 = winnerGame5
-		looserGame9 = winnerGame6
-	}else if(results[8][1] == '2'){
-		winnerGame9 = winnerGame6
-		looserGame9 = winnerGame5
-	}else{
-		return 'No player has 2 wins in game 9!'
-	}
-	rows.push([winnerGame5.userName, results[8][0], results[8][1], winnerGame6.userName])
-
-	if(results[9][0] == '2'){
-		winnerGame10 = looserGame5
-		looserGame10 = winnerGame7
-	}else if(results[9][1] == '2'){
-		winnerGame10 = winnerGame7
-		looserGame10 = looserGame5
-	}else{
-		return 'No player has 2 wins in game 10!'
-	}
-	rows.push([looserGame5.userName, results[9][0], results[9][1], winnerGame7.userName])
-
-	if(results[10][0] == '2'){
-		winnerGame11 = looserGame6
-		looserGame11 = winnerGame8
-	}else if(results[10][1] == '2'){
-		winnerGame11 = winnerGame8
-		looserGame11 = looserGame6
-	}else{
-		return 'No player has 2 wins in game 11!'
-	}
-	rows.push([looserGame6.userName, results[10][0], results[10][1], winnerGame8.userName])
-
-	if(results[11][0] == '2'){
-		winnerGame12 = looserGame7
-		looserGame12 = looserGame8
-	}else if(results[11][1] == '2'){
-		winnerGame12 = looserGame8
-		looserGame12 = looserGame7
-	}else{
-		return 'No player has 2 wins in game 12!'
-	}
-	rows.push([looserGame7.userName, results[11][0], results[11][1], looserGame8.userName])
-
-	//TODO: enter games into the database
-	
 	return '```' + table(rows, options) + '```'
+}
+
+function parseResults(players, results){
+    // bracket structure is kinda weird
+    // w1 => 5-1, w2 => 5-2
+    // w3 => 6-1, w4 => 6-2
+    // so far so good, but
+    // l1 => 8-1, l2 => 8-2
+    // l3 => 7-1, l4 => 7-2
+    // so losers flip around, but not totally
+    // so its neither l1 => 7-1 nor l1 => 8-2, but the weird mixup l1 => 8-1
+    // then for the third round it's again weird
+    // w5 => 9-1, w6 => 9-2
+    // l7 => 12-1, l8 => 12-2
+    // the only way, but then
+    // l5 => 10-1, w7 => 10-2
+    // l6 => 11-1, w8 => 11-2
+    // so it's not upper bracket/lower bracket after the first round but a mixup
+    // and players that won round 1 but lost round 2 don't play against each other
+    // so assuming first players wins, these are the seats:
+    const roundSeats = [
+        [0, 1, 2, 3, 4, 5, 6, 7],
+        [0, 2, 4, 6, 5, 7, 1, 3],
+        [0, 2, 1, 4, 3, 6, 5, 7]
+    ]
+    const roundMatches = 4
+    const rounds = 3
+
+    let parsedResults = []
+
+    let lastRoundPlayers = [...players]
+    for(let i = 0; i < rounds; i++){
+        let roundResults = results.slice(i * roundMatches, (i + 1) * roundMatches)
+        let seats = roundSeats[i]
+        let roundPlayers = seats.map((i) => lastRoundPlayers[i])
+        let flippedRoundPlayers = []
+
+        for(let j = 0; j < roundMatches; j++){
+            let player1 = roundPlayers[2 * j];
+            let player2 = roundPlayers[2 * j + 1];
+            let [wins, losses] = roundResults[j];
+
+            if(wins < losses){
+                [player1, player2] = [player2, player1];
+                [wins, losses] = [losses, wins];
+            }
+            flippedRoundPlayers.push(player1)
+            flippedRoundPlayers.push(player2)
+            parsedResults.push([player1, player2, wins, losses])
+        }
+
+        lastRoundPlayers = flippedRoundPlayers
+    }
+
+    return parsedResults
 }
 
 async function standings(){
@@ -490,7 +420,6 @@ async function addMatch(user1, user2, wins, losses, force){
         [user1, user2] = [user2, user1];
         [wins, losses] = [losses, wins];
     }
-
 
 	try{
 
