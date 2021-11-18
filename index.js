@@ -98,6 +98,9 @@ async function help(){
 
 			'Here are my comands:\n\n'+
 
+			'/addbracket - Adds a all matches from a finished pod bracket.\n'+
+				'\t[sesionid] - Session id of the pod from the mtgadraft.tk website.\n\n'+
+
 			'/addmatch - Adds a match record into the database.\n'+
 				'\t[opponent] - Person from the server that you played against. This field is required!\n'+
 				'\t[player] - If this field is skiped the person posting is selected as player.\n'+
@@ -138,9 +141,9 @@ async function addbracket(sessionid, guild){
 
     let players = []
     for (let bracketPlayer of bracketPlayers){
-        let player = await guild.members.cache.find(member => member.displayName == bracketPlayer)
+        let player = await guild.members.cache.find(member => member.displayName == bracketPlayer.userName)
         if(player === undefined){
-            return 'Player ' + bracketPlayer + ' not found'
+            return 'Player ' + bracketPlayer.userName + ' not found'
         }
         players.push(player.user)
     }
