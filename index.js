@@ -20,7 +20,7 @@ async function main() {
 /////////////
 
 async function connectDiscord(){
-	const client = new Client({ intents: [Intents.FLAGS.GUILDS] })
+	const client = new Client({ intents: [Intents.FLAGS.GUILDS, "GUILD_MEMBERS"] })
 
 	client.once('ready', () => {
 		console.log('Ready!')
@@ -133,15 +133,18 @@ async function addbracket(sessionid, guild){
 		return 'Brackets for the session do not exist!'
 	}
 
-	const { bracketPlayers, bracketResults, swiss } = await bracketResponse.json()
+	const { players: bracketPlayers, results: bracketResults, swiss } = await bracketResponse.json()
 
 	if(!swiss){
 		return 'Tournament mode should be swiss!'
 	}
 
     let players = []
+
+	const serverMembers = await guild.members.fetch()
+
     for (let bracketPlayer of bracketPlayers){
-        let player = await guild.members.cache.find(member => member.displayName == bracketPlayer.userName)
+        let player = serverMembers.find(member => member.displayName.toLowerCase().includes(bracketPlayer.userName.toLowerCase()))
         if(player === undefined){
             return 'Player ' + bracketPlayer.userName + ' not found'
         }
