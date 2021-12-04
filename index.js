@@ -41,7 +41,8 @@ async function connectDiscord(){
         } else if (commandName === 'history') {
             await interaction.deferReply()
                 const player = await guild.members.fetch(options.getUser('player') || user)
-                const response = await history(player)
+                const season = options.getInteger('season')	|| CURRENT_SEASON
+                const response = await history(player, season)
             await interaction.editReply(response)
 
         } else if (commandName === 'addmatch') {
@@ -50,31 +51,36 @@ async function connectDiscord(){
                 const player = await guild.members.fetch(options.getUser('player') || user)
                 const wins = options.getInteger('wins')		|| 0
                 const losses = options.getInteger('losses')	|| 0
+                const season = options.getInteger('season')	|| CURRENT_SEASON
                 const force = options.getBoolean('force') || false 
-                const response = await addMatch(player, opponent, wins, losses, force)
+                const response = await addMatch(player, opponent, wins, losses, season, force)
             await interaction.editReply(response)
 
         } else if (commandName === 'stats') {
             await interaction.deferReply()
                 const player = await guild.members.fetch(options.getUser('player') || user)
-                const response = await stats(player)
+                const season = options.getInteger('season')	|| CURRENT_SEASON
+                const response = await stats(player, season)
             await interaction.editReply(response)
 
         } else if (commandName === 'standings') {
             await interaction.deferReply()
-                const response = await standings()
+                const season = options.getInteger('season')	|| CURRENT_SEASON
+                const response = await standings(season)
             await interaction.editReply(response)
 
         } else if (commandName === 'updateplayer') {
             await interaction.deferReply()
                 const player =await guild.members.fetch( options.getUser('player') || user)
-                const response = await updatePlayerStats(player)
+                const season = options.getInteger('season')	|| CURRENT_SEASON
+                const response = await updatePlayerStats(player, season)
             await interaction.editReply(response)
 
         } else if (commandName === 'addbracket') {
             await interaction.deferReply()
                 const sessionid = options.getString('sessionid') || null
-                const response = await addbracket(sessionid, guild)
+                const season = options.getInteger('season')	|| CURRENT_SEASON
+                const response = await addbracket(sessionid, season, guild)
             await interaction.editReply(response)
 
         }else if (commandName === 'help') {
@@ -103,31 +109,40 @@ async function help(){
             'Here are my comands:\n\n'+
 
             '/addbracket - Adds a all matches from a finished pod bracket.\n'+
-                '\t[sesionid] - Session id of the pod from the mtgadraft.tk website.\n\n'+
+                '\t[sesionid] - Session id of the pod from the mtgadraft.tk website.\n'+
+                '\t[season] - season to which games will be added. If skiped the current season is used.\n\n'+
 
             '/addmatch - Adds a match record into the database.\n'+
                 '\t[opponent] - Person from the server that you played against. This field is required!\n'+
                 '\t[player] - If this field is skiped the person posting is selected as player.\n'+
                 '\t[wins] - Number of games that player won. If skiped value is set to 0.\n'+
                 '\t[losses] - Number of games that opponent won. If skiped value is set to 0.\n'+
+                '\t[season] - season to which the match will be added. If skiped the current season is used.\n'+
                 '\t[force] - Force the bot to add the match record when it\'s complaining about duplicates\n\n'+
+                
 
-            '/standings - displays current top 15 players\n\n'+
+            '/standings - displays current top 15 players\n'+
+                '\t[season] - APD season. If skiped the current season is used.\n\n'+
 
             '/stats - displays players stats like match wins/losses, match win%, game win%...\n'+
-                '\t[player] - If this field is skiped the person posting is selected as player.\n\n'+
+                '\t[player] - If this field is skiped the person posting is selected as player.\n'+
+                '\t[season] - APD season. If skiped the current season is used.\n\n'+
+
 
             '/history - displays players last 9 matches\n'+
-                '\t[player] - If this field is skiped the person posting is selected as player.\n\n'+
+                '\t[player] - If this field is skiped the person posting is selected as player.\n'+
+                '\t[season] - APD season. If skiped the current season is used.\n\n'+
+
 
             '/updateplayer - double checks players stats and updates them if necessary\n'+
-                '\t[player] - If this field is skiped the person posting is selected as player.\n\n'+
+                '\t[player] - If this field is skiped the person posting is selected as player.\n'+
+                '\t[season] - APD season. If skiped the current season is used.\n\n'+
 
             '/help - displays this message'+
             '```'
 }
 
-async function addbracket(sessionid, guild){
+async function addbracket(sessionid, season, guild){
     if(sessionid == null)	return 'Empty session id!'
 
     let bracketUrl = 'https://www.mtgadraft.tk/getBracket/' + sessionid
@@ -165,7 +180,7 @@ async function addbracket(sessionid, guild){
     for(let result of parsedResults){
         [player1, player2, winsPlayer1, winsPlayer2] = result;
         rows.push([player1.username, winsPlayer1, winsPlayer2, player2.username])
-        addMatch(player1, player2, winsPlayer1, winsPlayer2, false)
+        addMatch(player1, player2, winsPlayer1, winsPlayer2, season, false)
     }
 
     return '```' + table(rows, options) + '```'
@@ -226,31 +241,65 @@ function parseResults(players, results){
     return parsedResults
 }
 
-async function standings(){
-    const players = await playerModel.find().sort({matchWins: -1, matchWinPercentage: -1, gameWinPercentage: -1, opponentMatchWinPercentage: -1, opponentGameWinPercentage: -1} ).limit(15)
+async function standings(season){
+    const players = await playerModel.aggregate([
+    {
+        $match: {
+            'seasonStats.seasonId': season
+        }
+    },
+    {
+        $project: { 
+            playerName: 1,
+            seasonStats: { 
+                $filter:{
+                    input: '$seasonStats',
+                    as: 'item',
+                    cond: {$eq: ["$$item.seasonId", season]}
+                }
+            }
+        }
+    },
+    { $unwind : "$seasonStats" },
+    { $sort: {'seasonStats.matchWins': -1, 'seasonStats.matchWinPercentage': -1, 'seasonStats.gameWinPercentage': -1, 'seasonStats.opponentMatchWinPercentage': -1, 'seasonStats.opponentGameWinPercentage': -1}},
+    { $limit: 15 }
+    ])
 
     let rows = [['Rank', 'Player', 'Match wins', 'Match win%', 'Game win%', 'Opp match win%', 'Opp game win%']]
 
     let rank = 1
     for(let player in players){
-        rows.push([rank++, players[player].playerName, players[player].matchWins, players[player].matchWinPercentage.toFixed(2), players[player].gameWinPercentage.toFixed(2), players[player].opponentMatchWinPercentage.toFixed(2), players[player].opponentGameWinPercentage.toFixed(2)])
+        if(players[player].seasonStats.opponentMatchWinPercentage && players[player].seasonStats.opponentGameWinPercentage)
+            rows.push([rank++, players[player].playerName, players[player].seasonStats.matchWins, players[player].seasonStats.matchWinPercentage.toFixed(2), players[player].seasonStats.gameWinPercentage.toFixed(2), players[player].seasonStats.opponentMatchWinPercentage.toFixed(2), players[player].seasonStats.opponentGameWinPercentage.toFixed(2)])
+        else
+            rows.push([rank++, players[player].playerName, players[player].seasonStats.matchWins, players[player].seasonStats.matchWinPercentage.toFixed(2), players[player].seasonStats.gameWinPercentage.toFixed(2), '',''])
+
     }
     return '```' + table(rows) + '```'
 }
 
-async function stats(user){
-    await checkIfPlayerExists(user)
+async function stats(user, season){
+    const playerName = await verifyPlayer(user)
 
     try{
-        const player = await playerModel.findOne({playerId: user.id})
+        const player = await playerModel.findOne({
+            'playerName': playerName,
+            'seasonStats.seasonId': season
+        },
+        {
+            playerName: 1,
+            seasonStats: { $elemMatch: { seasonId: season}}
+        })
 
+        const oppMatch = player.seasonStats[0].opponentMatchWinPercentage == undefined ? '' : player.seasonStats[0].opponentMatchWinPercentage.toFixed(2)
+        const oppGame =  player.seasonStats[0].opponentGameWinPercentage == undefined ? '' :  player.seasonStats[0].opponentGameWinPercentage.toFixed(2)
         let rows = [['Player:', player.playerName],
-                    ['Match stats:', player.matchWins + '-' + player.matchLosses],
-                    ['Game stats:', player.gameWins + '-' + player.gameLosses],
-                    ['Match-win %:', player.matchWinPercentage.toFixed(2)],
-                    ['Game-win %:', player.gameWinPercentage.toFixed(2)],
-                    ['Opp Match-win %:', player.opponentMatchWinPercentage.toFixed(2)],
-                    ['Opp Game-win %:', player.opponentGameWinPercentage.toFixed(2)]]
+                    ['Match stats:', player.seasonStats[0].matchWins + '-' + player.seasonStats[0].matchLosses],
+                    ['Game stats:', player.seasonStats[0].gameWins + '-' + player.seasonStats[0].gameLosses],
+                    ['Match-win %:', player.seasonStats[0].matchWinPercentage.toFixed(2)],
+                    ['Game-win %:', player.seasonStats[0].gameWinPercentage.toFixed(2)],
+                    ['Opp Match-win %:', oppMatch],
+                    ['Opp Game-win %:', oppGame]]
 
         return	'```' + table(rows) + '```'
 
@@ -259,13 +308,16 @@ async function stats(user){
     }
 }
 
-async function history(user){
-    await checkIfPlayerExists(user)
+async function history(user, season){
+    const playerName = await verifyPlayer(user)
     try{
         let matches = await matchModel.aggregate([
             {
                 $match: {
-                     $or : [{playerOneId: user.id}, {playerTwoId: user.id }]
+                    $and:[ 
+                        {$or : [{winner: playerName}, {loser: playerName }]},
+                        {season: season}
+                    ]
                 }
             },
             {
@@ -273,53 +325,20 @@ async function history(user){
             },
             {
                 $limit: 9
-            },
-            {
-                $lookup: {
-                  from: 'playermodels',
-                  let: { playerOneId: '$playerOneId', playerTwoId: '$playerTwoId' },
-                  pipeline: [{
-                      $match: {
-                          $expr: {
-                              $and: [
-                                { $ne: [ '$playerId', user.id ] },
-                                { $or : [
-                                    { $eq: ['$playerId', '$$playerOneId']},
-                                    { $eq: ['$playerId', '$$playerTwoId']}
-                                ]}
-                              ]
-                            }
-                        }
-                    }],
-                 as: 'opponent'
-                }
-            },
-            {
-              $unwind: {
-                path: '$opponent'
-              }
-            },
-            { $project: {
-                playerOneId: true,
-                playerTwoId: true,
-                winsPlayerOne: true,
-                winsPlayerTwo: true,
-                date: true,
-                opponent: '$opponent.playerName'
-            }}
+            }
         ])
 
 
         let rows = [['Opponent', 'wins', 'losses']]
 
         for(let match in matches){
-            if(user.id === matches[match].playerOneId){
-                rows.push([matches[match].opponent, matches[match].winsPlayerOne, matches[match].winsPlayerTwo])
+            if(playerName === matches[match].winner){
+                rows.push([matches[match].loser, matches[match].winsWinner, matches[match].winsLoser])
             }else{
-                rows.push([matches[match].opponent, matches[match].winsPlayerTwo, matches[match].winsPlayerOne])
+                rows.push([matches[match].winner, matches[match].winsLoser, matches[match].winsWinner])
             }
         }
-        return '```History for player ' + user.username + '\n' + table(rows) + '```'
+        return '```History for player ' + playerName + '\n' + table(rows) + '```'
     }catch(e){
         console.error(e)
     }
@@ -335,33 +354,6 @@ async function updatePlayerStats(user, season){
                 {season: season}
             ]
         })
-        /*
-        {
-            $lookup: {
-              from: 'playermodels',
-              let: { winner: '$winner', loser: '$loser' },
-              pipeline: [{
-                  $match: {
-                      $expr: {
-                          $and: [
-                            { $ne: [ '$playerName', playerName ] },
-                            { $or : [
-                                { $eq: ['$playerName', '$$winner']},
-                                { $eq: ['$playerName', '$$loser']}
-                            ]}
-                          ]
-                        }
-                    }
-                }],
-             as: 'opponent'
-            }
-        },
-        {
-          $unwind: {
-            path: '$opponent'
-          }
-        }
-        */
 
     let matchWins = 0
     let matchLosses = 0
@@ -434,7 +426,7 @@ async function updatePlayerStats(user, season){
     return 'Player stats updated!'
 }
 
-async function addMatch(player1, player2, winsPlayer1, winsPlayer2, force){
+async function addMatch(player1, player2, winsPlayer1, winsPlayer2, season, force){
     const player1Name = await verifyPlayer(player1)
     const player2Name = await verifyPlayer(player2)
 
@@ -450,7 +442,7 @@ async function addMatch(player1, player2, winsPlayer1, winsPlayer2, force){
             loser: loser,
             winsWinner: winsWinner,
             winsLoser: winsLoser,
-            season: CURRENT_SEASON,
+            season: season,
             date: Date()
         })
 
@@ -459,8 +451,8 @@ async function addMatch(player1, player2, winsPlayer1, winsPlayer2, force){
         if(force || !matchAlreadyExists){
             
             await newMatch.save(async (err) => {
-                await updatePlayerStats(player1, CURRENT_SEASON)
-                await updatePlayerStats(player2, CURRENT_SEASON)
+                await updatePlayerStats(player1, season)
+                await updatePlayerStats(player2, season)
                 if (err) return handleError(err)
             })
             
